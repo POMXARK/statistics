@@ -1,0 +1,51 @@
+version: '3'
+services:
+    unigine_test_nginx:
+        image: nginx:latest
+        ports:
+            - "8080:80"
+        volumes:
+            - ./hosts:/etc/nginx/conf.d
+            - ./www:/var/www
+            - ./logs/nginx:/var/log/nginx
+        links:
+            - statistics_app
+#        networks:
+#            - default
+    statistics_app:
+        container_name: statistics_app
+        build: ./images/php
+        volumes:
+            - ./www:/var/www
+#        networks:
+#            - default
+#networks:
+#    default:
+#        external: true
+#        name: web-test-work_default
+    statistics_mysql:
+        image: mariadb:latest
+        ports:
+            - "3304:3306"
+        volumes:
+            - ./etc/mysql:/etc/mysql
+            - ./logs/mysql:/var/log/mysql
+            - ./mysql:/var/lib/mysql
+            - ./mysql-files:/var/lib/mysql-files
+            - ./data/statistics.sql:/docker-entrypoint-initdb.d/dump.sql
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: statistics
+            MYSQL_USER: user
+            MYSQL_PASSWORD: user
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        links:
+            - statistics_mysql
+        environment:
+            PMA_HOST: statistics_mysql
+            PMA_PORT: 3306
+            PMA_ARBITRARY: 1
+        restart: always
+        ports:
+            - "8082:80"
